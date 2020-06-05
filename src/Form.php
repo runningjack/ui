@@ -194,6 +194,7 @@ class Form extends View
         }
 
         if (is_string($this->layout) || is_array($this->layout)) {
+<<<<<<< develop
             $this->layout = $this->factory($this->layout, ['form' => $this]);
             $this->layout = $this->add($this->layout);
         } elseif (is_object($this->layout)) {
@@ -202,7 +203,14 @@ class Form extends View
         } else {
             throw (new Exception('Unsupported specification of form layout. Can be array, string or object'))
                 ->addMoreInfo('layout', $this->layout);
+=======
+            $this->layout = Layout::addTo($this, $this->layout, ['form' => $this]);
+>>>>>>> DEBUG - isolate main factories
         }
+
+        Layout::checkInstanceOf($this->layout);
+        $this->layout->form = $this;
+        $this->add($this->layout);
 
         // Add save button in layout
         if ($this->buttonSave) {
@@ -563,7 +571,7 @@ class Form extends View
             'short_name' => $field->short_name,
         ];
 
-        return $this->factory($seed, $defaults);
+        return FormField::addToWithCl($this, $this->layout, $seed, $defaults, false);
     }
 
     /**
