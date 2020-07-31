@@ -73,15 +73,32 @@ class Callback
 
     public function setUrlTrigger(string $trigger = null)
     {
-        $this->urlTrigger = $trigger ?: $this->name;
-        if ($this->isSticky) {
-            $this->app->stickyGet($this->urlTrigger);
-        }
+        $this->urlTrigger = $trigger ?? $this->name;
     }
 
     public function getUrlTrigger(): string
     {
         return $this->urlTrigger;
+    }
+
+    private function callWithAppStickyTrigger(\Closure $fx)
+    {
+        $app = $this->app;
+        $appStickyArgsBak = \Closure::bind(function () use ($app) {
+            return $app->sticky_get_arguments;
+        }, null, App::class)();
+
+        try {
+            if ($this->isSticky) {
+                $app->stickyGet($this->urlTrigger);
+            }
+
+            return $fx();
+        } finally {
+            \Closure::bind(function () use ($app, $appStickyArgsBak) {
+                $app->sticky_get_arguments = $appStickyArgsBak;
+            }, null, App::class)();
+        }
     }
 
     /**
@@ -95,13 +112,15 @@ class Callback
     public function set($callback, $args = [])
     {
         if ($this->isTriggered() && $this->canTrigger()) {
-            $this->app->catch_runaway_callbacks = false;
-            $t = $this->app->run_called;
-            $this->app->run_called = true;
-            $ret = $callback(...$args);
-            $this->app->run_called = $t;
+            $this->callWithAppStickyTrigger(function () use ($callback, $args) {
+                $this->app->catch_runaway_callbacks = false;
+                $t = $this->app->run_called;
+                $this->app->run_called = true;
+                $ret = $callback(...$args);
+                $this->app->run_called = $t;
 
-            return $ret;
+                return $ret;
+            });
         }
     }
 
