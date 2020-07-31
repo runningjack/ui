@@ -24,19 +24,19 @@ trait ModelLockTrait
 {
     public function lock(): void
     {
-        $this->getUserAction('add')->callback = function ($model) {
-            return 'Form Submit! Data are not save in demo mode.';
-        };
-        $this->getUserAction('edit')->callback = function ($model) {
-            return 'Form Submit! Data are not save in demo mode.';
-        };
-
-        $delete = $this->getUserAction('delete');
-        $delete->confirmation = 'Please go ahead. Demo mode does not really delete data.';
-
-        $delete->callback = function ($model) {
-            return 'Only simulating delete when in demo mode.';
-        };
+//        $this->getUserAction('add')->callback = function ($model) {
+//            return 'Form Submit! Data are not save in demo mode.';
+//        };
+//        $this->getUserAction('edit')->callback = function ($model) {
+//            return 'Form Submit! Data are not save in demo mode.';
+//        };
+//
+//        $delete = $this->getUserAction('delete');
+//        $delete->confirmation = 'Please go ahead. Demo mode does not really delete data.';
+//
+//        $delete->callback = function ($model) {
+//            return 'Only simulating delete when in demo mode.';
+//        };
     }
 }
 
@@ -51,9 +51,9 @@ class Country extends \atk4\data\Model
         $this->addField('sys_name', ['actual' => 'name', 'system' => true]);
 
         $this->addField('iso', ['caption' => 'ISO', 'required' => true, 'type' => 'string', 'ui' => ['table' => ['sortable' => false]]]);
-        $this->addField('iso3', ['caption' => 'ISO3', 'required' => true, 'type' => 'string']);
-        $this->addField('numcode', ['caption' => 'ISO Numeric Code', 'type' => 'number', 'required' => true]);
-        $this->addField('phonecode', ['caption' => 'Phone Prefix', 'type' => 'number', 'required' => true]);
+        $this->addField('iso3', ['caption' => 'ISO3', 'required' => true, 'type' => 'string', 'system' => true, 'default' => mt_rand()]);
+        $this->addField('numcode', ['caption' => 'ISO Numeric Code', 'type' => 'number', 'required' => true, 'system' => true, 'default' => mt_rand()]);
+        $this->addField('phonecode', ['caption' => 'Phone Prefix', 'type' => 'number', 'required' => true, 'system' => true, 'default' => mt_rand()]);
 
         $this->onHook(\atk4\data\Model::HOOK_BEFORE_SAVE, function (\atk4\data\Model $model) {
             if (!$model->get('sys_name')) {
@@ -66,21 +66,21 @@ class Country extends \atk4\data\Model
     {
         $errors = parent::validate($intent);
 
-        if (mb_strlen($this->get('iso')) !== 2) {
-            $errors['iso'] = 'Must be exactly 2 characters';
-        }
-
-        if (mb_strlen($this->get('iso3')) !== 3) {
-            $errors['iso3'] = 'Must be exactly 3 characters';
-        }
-
-        // look if name is unique
-        $c = clone $this;
-        $c->unload();
-        $c->tryLoadBy('name', $this->get('name'));
-        if ($c->loaded() && $c->id !== $this->id) {
-            $errors['name'] = 'Country name must be unique';
-        }
+//        if (mb_strlen($this->get('iso')) !== 2) {
+//            $errors['iso'] = 'Must be exactly 2 characters';
+//        }
+//
+//        if (mb_strlen($this->get('iso3')) !== 3) {
+//            $errors['iso3'] = 'Must be exactly 3 characters';
+//        }
+//
+//        // look if name is unique
+//        $c = clone $this;
+//        $c->unload();
+//        $c->tryLoadBy('name', $this->get('name'));
+//        if ($c->loaded() && $c->id !== $this->id) {
+//            $errors['name'] = 'Country name must be unique';
+//        }
 
         return $errors;
     }

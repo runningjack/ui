@@ -7,97 +7,90 @@ namespace atk4\ui\demo;
 /** @var \atk4\ui\App $app */
 require_once __DIR__ . '/../init-app.php';
 
-$model = new CountryLock($app->db);
+class MyUpload extends \atk4\ui\Form\Control\Input {
+    /** @var \atk4\ui\View */
+    protected $wrapper;
+    /** @var \atk4\ui\Form\Control\Upload */
+    protected $uploadControl;
+    /** @var \atk4\ui\View */
+    protected $preview;
 
-$crud = \atk4\ui\Crud::addTo($app, ['ipp' => 10]);
+    public function init(): void {
+        parent::init();
 
-// callback for model action add form.
-$crud->onFormAdd(function ($form, $t) {
-    $form->js(true, $form->getControl('name')->jsInput()->val('Entering value via javascript'));
-});
+        $this->inputType = 'hidden';
 
-// callback for model action edit form.
-$crud->onFormEdit(function ($form) {
-    $form->js(true, $form->getControl('name')->jsInput()->attr('readonly', true));
-});
+        $this->wrapper = \atk4\ui\View::addTo($this, [
+            'region' => 'Input',
+            'style' => ['width' => '100%']
+        ]);
 
-// callback for both model action edit and add.
-$crud->onFormAddEdit(function ($form, $ex) {
-    $form->onSubmit(function (\atk4\ui\Form $form) use ($ex) {
-        return [$ex->hide(), new \atk4\ui\JsToast('Submit all right! This demo does not saved data.')];
-    });
-});
+        $this->initUploadControl();
+        $this->initPreview();
 
-$crud->setModel($model);
+        // if triggered, there action are processed immediatelly, thus nothing after will be reached
+        $this->uploadControl->onUpload(function($postFile) {
+            // "error "may be passed on upload error
+            // see https://github.com/atk4/ui/blob/26bc53f40d884b3fc06fada54f44a40c47a75f05/src/Form/Control/Upload.php#L221
+            if (!is_array($postFile) || $postFile['error'] !== 0) {
+                throw new \atk4\ui\Exception('Upload to server failed');
+            }
 
-$crud->addDecorator($model->title_field, [\atk4\ui\Table\Column\Link::class, ['test' => false, 'path' => 'interfaces/page'], ['_id' => 'id']]);
+            $this->onItemUpload($postFile['name']);
 
-\atk4\ui\View::addTo($app, ['ui' => 'divider']);
-
-$columns = \atk4\ui\Columns::addTo($app);
-$column = $columns->addColumn(0, 'ui blue segment');
-
-// Crud can operate with various fields
-\atk4\ui\Header::addTo($column, ['Configured Crud']);
-$crud = \atk4\ui\Crud::addTo($column, [
-    //'fieldsCreate' => ['name', 'iso', 'iso3', 'numcode', 'phonecode'], // when creating then show more fields
-    'displayFields' => ['name'], // when updating then only allow to update name
-    'editFields' => ['name', 'iso', 'iso3'],
-    'ipp' => 5,
-    'paginator' => ['range' => 2, 'class' => ['blue inverted']],  // reduce range on the paginator
-    'menu' => ['class' => ['green inverted']],
-    'table' => ['class' => ['red inverted']],
-]);
-// Condition on the model can be applied on a model
-$model = new CountryLock($app->db);
-$model->addCondition('numcode', '<', 200);
-$model->onHook(\atk4\data\Model::HOOK_VALIDATE, function ($model, $intent) {
-    $err = [];
-    if ($model->get('numcode') >= 200) {
-        $err['numcode'] = 'Should be less than 200';
+            return $this->returnReload();
+        });
+        $this->uploadControl->onDelete(function() {
+            return $this->returnReload();
+        });
     }
 
-    return $err;
-});
-$crud->setModel($model);
+    private function returnReload() {
+        return new \atk4\ui\JsReload($this); // does not work, reload GET loops when in Crud Modal
+        return $this->js(true)->html($this->render()); // working - but let's fix also the reload above
+    }
 
-// Because Crud inherits Grid, you can also define custom actions
-$crud->addModalAction(['icon' => [\atk4\ui\Icon::class, 'cogs']], 'Details', function ($p, $id) use ($crud) {
-    \atk4\ui\Message::addTo($p, ['Details for: ' . $crud->model->load($id)['name'] . ' (id: ' . $id . ')']);
-});
+    protected function initUploadControl(): void {
+        $form = \atk4\ui\Form::addTo($this->wrapper, [
+            'buttonSave' => false
+        ]);
 
-$column = $columns->addColumn();
-\atk4\ui\Header::addTo($column, ['Cutomizations']);
+        $form->addControl('upload', [\atk4\ui\Form\Control\Upload::class]);
+        $this->uploadControl = $form->getControl('upload');
+        $this->uploadControl->caption = 'select file to upload';
+        $this->uploadControl->owner->label = true; // force caption to be displayed as placeholder
+        $this->uploadControl->hasUploadCb = true;
+        $this->uploadControl->hasDeleteCb = true;
+    }
 
-/** @var \atk4\ui\UserAction\ModalExecutor $myExecutorClass */
-$myExecutorClass = get_class(new class() extends \atk4\ui\UserAction\ModalExecutor {
-    public function addFormTo(\atk4\ui\View $view): \atk4\ui\Form
+    protected function initPreview(): void
     {
-        $columns = \atk4\ui\Columns::addTo($view);
-        $left = $columns->addColumn();
-        $right = $columns->addColumn();
+        $this->preview = \atk4\ui\View::addTo($this->wrapper, [
+            'Test ' . microtime(true)
+        ]);
 
-        $result = parent::addFormTo($left); // TODO: Change the autogenerated stub
-
-        if ($this->action->owner['is_folder']) {
-            \atk4\ui\Grid::addTo($right, ['menu' => false, 'ipp' => 5])
-                ->setModel($this->action->owner->ref('SubFolder'));
-        } else {
-            \atk4\ui\Message::addTo($right, ['Not a folder', 'warning']);
-        }
-
-        return $result;
+        addCrudDemo($this->wrapper, $this->app->db);
     }
-});
 
-$file = new FileLock($app->db);
-$file->getUserAction('edit')->ui['executor'] = [$myExecutorClass];
+    protected function onItemUpload(string $filename = null): void
+    {
+        // do nothing now...
+    }
+}
 
-$crud = \atk4\ui\Crud::addTo($column, [
-    'ipp' => 5,
-]);
+function addCrudDemo(object $parent, \atk4\data\Persistence $db): \atk4\ui\Crud
+{
+    $model = new CountryLock($db);
+    $model->getField('name')->ui = ['form' => [MyUpload::class]];
 
-$crud->menu->addItem(['Rescan', 'icon' => 'recycle']);
+    $crud = \atk4\ui\Crud::addTo($parent, ['ipp' => 10]);
+    $crud->onFormAdd(function ($form, $t) {
+        $form->js(true, $form->getControl('name')->jsInput()->val('val from JS'));
+    });
+    $crud->setModel($model);
 
-// Condition on the model can be applied after setting the model
-$crud->setModel($file)->addCondition('parent_folder_id', null);
+    return $crud;
+}
+
+$crud = addCrudDemo($app, $app->db);
+\Closure::bind(function () use ($crud) { return $crud->menuItems; }, $crud, \atk4\ui\Crud::class)()['add']['item']->js(true)->click();
