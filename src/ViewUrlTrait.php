@@ -11,9 +11,6 @@ trait ViewUrlTrait
     /** @var string[] stickyGet arguments */
     public $stickyArgs = [];
 
-    /** @var string[] Cached stickyGet arguments */
-    public $_stickyArgsCached;
-
     /**
      * Build an URL which this view can use for js call-backs. It should
      * be guaranteed that requesting returned URL would at some point call
@@ -59,13 +56,13 @@ trait ViewUrlTrait
     public function _getStickyArgs($triggerBy)
     {
         $this->_triggerBy = $triggerBy;
-        if ($this->owner && $this->owner instanceof self) {
-            $this->_stickyArgsCached = array_merge($this->owner->_getStickyArgs($triggerBy), $this->stickyArgs);
+        if ($this->owner && !($this->owner instanceof App)) {
+            $stickyArgs = array_merge($this->owner->_getStickyArgs($triggerBy), $this->stickyArgs);
         } else {
-            $this->_stickyArgsCached = [];
+            $stickyArgs = [];
         }
 
-        return $this->_stickyArgsCached;
+        return $stickyArgs;
     }
 
     /**
