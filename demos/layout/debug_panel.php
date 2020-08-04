@@ -17,7 +17,19 @@ $btn = \atk4\ui\Button::addTo($app, ['Button 1']);
 $btn->js(true)->data('btn', '1');
 $btn->on('click', $panel1->jsOpen(['btn'], 'orange'));
 
-$panel1->onOpen(function ($p) {
+$panel1->onOpen(function ($p) use ($panel1) {
+    /** @var \atk4\ui\Callback $cb */
+    $cb = null;
+    foreach (debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS | DEBUG_BACKTRACE_PROVIDE_OBJECT) as $stackFrame) {
+        if (($stackFrame['object'] ?? null) instanceof \atk4\ui\Callback && $stackFrame['function'] === 'set') {
+            $cb = $stackFrame['object'];
+            break;
+        }
+    }
+    if ($cb === null) {
+        throw new \Exception('Failed to get cb');
+    }
+
     $panel = \atk4\ui\View::addTo($p, ['ui' => 'basic segment']);
     $buttonNumber = $panel->stickyGet('btn');
 
@@ -25,5 +37,11 @@ $panel1->onOpen(function ($p) {
     \atk4\ui\Message::addTo($panel, ['Panel 1', 'text' => $panelText]);
 
     $reloadPanelButton = \atk4\ui\Button::addTo($panel, ['Reload Myself']);
-    $reloadPanelButton->on('click', new \atk4\ui\JsReload($panel));
+    $reload = new \atk4\ui\JsReload($panel);
+
+    // reload must be asociated with originating callback (no longer app sticky args)
+    $reload->viewForUrl = $cb;
+    $cb->stickyGet($cb->getUrlTrigger(), $cb->getTriggeredValue());
+
+    $reloadPanelButton->on('click', $reload);
 });

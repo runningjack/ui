@@ -55,7 +55,7 @@ class JsReload implements JsExpressionable
         $final = (new Jquery($this->view))
             ->atkReloadView(
                 [
-                    'uri' => $this->view->jsUrl(['__atk_reload' => $this->view->name]),
+                    'uri' => $this->jsUrl(['__atk_reload' => $this->view->name]),
                     'uri_options' => !empty($this->args) ? $this->args : null,
                     'afterSuccess' => $this->afterSuccess ? $this->afterSuccess->jsRender() : null,
                     'apiConfig' => !empty($this->apiConfig) ? $this->apiConfig : null,
@@ -64,5 +64,13 @@ class JsReload implements JsExpressionable
             );
 
         return $final->jsRender();
+    }
+
+    /** @var View|Callback */
+    public $viewForUrl;
+
+    public function jsUrl($page = [])
+    {
+        return ($this->viewForUrl ?? $this->view)->jsUrl($page);
     }
 }

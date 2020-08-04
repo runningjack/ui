@@ -75,9 +75,9 @@ class Callback
     public function setUrlTrigger(string $trigger = null)
     {
         $this->urlTrigger = $trigger ?: $this->name;
-        if ($this->isSticky) {
-            $this->app->stickyGet($this->urlTrigger);
-        }
+//        if ($this->isSticky) {
+//            $this->app->stickyGet($this->urlTrigger);
+//        }
     }
 
     public function getUrlTrigger(): string
