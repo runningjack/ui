@@ -37,6 +37,7 @@ class Callback
         init as _init;
     }
     use StaticAddToTrait;
+    use ViewUrlTrait;
 
     /** @var string Specify a custom GET trigger. */
     protected $urlTrigger;
@@ -155,7 +156,7 @@ class Callback
      */
     public function getJsUrl(string $value = 'ajax'): string
     {
-        return $this->owner->jsUrl($this->getUrlArguments($value));
+        return $this->jsUrl($this->getUrlArguments($value));
     }
 
     /**
@@ -164,7 +165,7 @@ class Callback
      */
     public function getUrl(string $value = 'callback'): string
     {
-        return $this->owner->url($this->getUrlArguments($value));
+        return $this->url($this->getUrlArguments($value));
     }
 
     /**
