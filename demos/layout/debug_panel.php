@@ -41,6 +41,29 @@ $panel1->onOpen(function ($p) use ($panel1) {
 
     // reload must be asociated with originating callback (no longer app sticky args)
     $reload->viewForUrl = $cb;
+
+//    $eToPath = function ($e) use (&$eToPath) {
+//        $res = [get_class($e) . '(' . $e->name . ')'];
+//
+//        $o = $e->owner;
+//        if ($o === null) {
+//            $res = array_merge(['NULL'], $res);;
+//        } elseif (!$o instanceof App) {
+//            $res = array_merge($eToPath($o), $res);
+//        }
+//
+//        return $res;
+//    };
+//
+//    $dumpE = function($e) use($eToPath) {echo implode('<br>->', $eToPath($e)) . "<br><br>";};
+//    $dumpE($panel);
+//    $dumpE($cb);
+//
+//    var_dump($panel->jsUrl()); echo "<br>";
+//    var_dump($cb->jsUrl());
+//
+//    exit;
+
     $cb->stickyGet($cb->getUrlTrigger(), $cb->getTriggeredValue());
 
     $reloadPanelButton->on('click', $reload);
